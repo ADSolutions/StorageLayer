@@ -23,7 +23,7 @@ typedef enum {
 @class CNFetchedPropertyDescription;
 
 CNPropertyDescription *createPropDesc(NSString *pName, NSString *qfName, CNPropertyType pType);
-CNFetchedPropertyDescription *createFetchedPropDesc(NSString *pName, BOOL oneToOne, NSString *className, NSString *predicate, ...);
+CNFetchedPropertyDescription *createFetchedPropDesc(NSString *pName, BOOL oneToOne, NSString *className, NSString *foreignFieldName, NSString *predicate, ...);
 
 @interface CNPropertyDescription : NSObject
 @property (nonatomic, strong, readonly) NSString *propertyName;
@@ -34,4 +34,5 @@ CNFetchedPropertyDescription *createFetchedPropDesc(NSString *pName, BOOL oneToO
 @interface CNFetchedPropertyDescription : CNPropertyDescription
 @property (nonatomic, strong, readonly) NSString *targetClassName;
 @property (nonatomic, strong, readonly) NSPredicate *fetchPredicate;
+@property (nonatomic, strong, readonly) NSString *foreignFieldName;
 @end

@@ -17,6 +17,7 @@
 @interface CNFetchedPropertyDescription ()
 @property (nonatomic, strong) NSString *targetClassName;
 @property (nonatomic, strong) NSPredicate *fetchPredicate;
+@property (nonatomic, strong) NSString *foreignFieldName;
 @end
 
 
@@ -29,13 +30,14 @@ CNPropertyDescription *createPropDesc(NSString *pName, NSString *qfName, CNPrope
     return pd;
 }
 
-CNFetchedPropertyDescription *createFetchedPropDesc(NSString *pName, BOOL oneToOne, NSString *className, NSString *predicate, ...)
+CNFetchedPropertyDescription *createFetchedPropDesc(NSString *pName, BOOL oneToOne, NSString *className, NSString *foreignFieldName, NSString *predicate, ...)
 {
     CNFetchedPropertyDescription *fpd = [[CNFetchedPropertyDescription alloc] init];
     fpd.propertyName = pName;
     fpd.queryFieldName = nil;
     fpd.propertyType = (oneToOne ? CNPropertyTypeObject : CNPropertyTypeObjectArray);
     fpd.targetClassName = className;
+    fpd.foreignFieldName = foreignFieldName;
     va_list vl;
     va_start(vl,predicate);
     fpd.fetchPredicate = [NSPredicate predicateWithFormat:predicate
