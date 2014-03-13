@@ -117,6 +117,28 @@ id fetchedPropertyAutoloader(CNStorageLayerObject *self, SEL _cmd)
     return result;
 }
 
++ (NSArray *)fetchedPropertyDescriptions
+{
+    static NSMapTable *cache = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        cache = [NSMapTable strongToStrongObjectsMapTable];
+    });
+    NSMutableArray *result = [cache objectForKey:NSStringFromClass(self)];
+    if (!result) {
+        NSArray *pds = [self propertyDescriptions];
+        result = [NSMutableArray arrayWithCapacity:[pds count]];
+        for (id pd in pds) {
+            if ([pd isKindOfClass:[CNFetchedPropertyDescription class]]) {
+                if ([(CNFetchedPropertyDescription *)pd propertyType]==CNPropertyTypeObject || [(CNFetchedPropertyDescription *)pd propertyType]==CNPropertyTypeObjectArray) {
+                    [result addObject:pd];
+                }
+            }
+        }
+        [cache setObject:result forKey:NSStringFromClass(self)];
+    }
+    return result;
+}
 
 + (NSArray *)orderedPropertyNames
 {

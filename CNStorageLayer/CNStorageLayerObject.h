@@ -21,6 +21,7 @@
 // Abstract Method
 + (NSString *)tableName;
 + (NSArray *)propertyDescriptions;
++ (NSArray *)fetchedPropertyDescriptions;
 
 // Class Helper Methods
 + (NSArray *)fetchedPropertyNames;
