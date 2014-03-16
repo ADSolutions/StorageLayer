@@ -263,6 +263,34 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
 
 #pragma mark - Identifier-based Fetching Method
 
+-(void)reloadObject:(id)object
+{
+    NSAssert([object primaryKey]!=nil, @"PrimaryKey cannot be nil.");
+    __block CNStorageLayerObject *result = nil;
+    [self.dbQueue inDatabase:^(FMDatabase *db) {
+        result = object;
+        NSString *query = [self selectStatementForClass:CNClass([object class])];
+        FMResultSet *rs = [db executeQuery:query withArgumentsInArray:@[[object primaryKey]]];
+        if (!rs) {
+            NSString *errMsg = [db lastErrorMessage];
+            NSLog(@"Error executing Query (%@). Error: %@", query, errMsg);
+            return;
+        }
+        if ([rs next]) {
+            Class objectClass = [object class];
+            NSAssert([objectClass isSubclassOfClass:[CNStorageLayerObject class]], @"Object class must be a subclass of CNStorageLayerObject.");
+            NSDictionary *map = [objectClass propertyDescriptionMapByQueryFieldName];
+            [self populateObject:result
+                        database:db
+                       resultSet:rs
+                         mapping:map];
+            result.storageLayer = nil;
+            [self addObjectToCache:result];
+        }
+        [rs close];
+    }];
+}
+
 - (id)objectOfClass:(NSString *)className
      withPrimaryKey:(NSNumber *)primaryKey
 {
@@ -290,6 +318,7 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
                              mapping:map];
                 [self addObjectToCache:result];
             }
+            [rs close];
         }
     }];
     
@@ -333,6 +362,7 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
             }
             [results addObject:obj];
         }
+        [rs close];
     }];
     
     return results;
@@ -448,8 +478,6 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
     // storage layer.
     CNStorageLayerObject *obj = [cache objectForKey:primaryKey];
     if (obj) {
-        obj.primaryKey = nil;
-        obj.storageLayer = nil;
         [cache removeObjectForKey:primaryKey];
     }
 }
