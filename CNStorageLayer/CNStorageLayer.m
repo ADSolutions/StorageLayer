@@ -470,6 +470,12 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
 }
 
 - (void)removeFromCacheObjectOfClass:(NSString *)className
+{
+    NSMapTable *cache = [self objectCacheForClassName:className];
+    [cache removeAllObjects];
+}
+
+- (void)removeFromCacheObjectOfClass:(NSString *)className
                       withPrimaryKey:(NSNumber *)primaryKey
 {
     NSMapTable *cache = [self objectCacheForClassName:className];
