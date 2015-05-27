@@ -407,6 +407,10 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
                 if ([value isKindOfClass:[NSString class]]) {
                     value = @([value integerValue]);
                 }
+                
+                if (value==[NSNull null]) {
+                    value = @(0); // previous was nil
+                }
                 break;
             case CNPropertyTypeFloat:
                 value = [resultSet objectForColumnName:aQueryField];
