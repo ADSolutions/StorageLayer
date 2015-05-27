@@ -417,11 +417,19 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
                 if ([value isKindOfClass:[NSString class]]) {
                     value = @([value floatValue]);
                 }
+                
+                if (value==[NSNull null]) {
+                    value = @(0); // previous was nil
+                }
                 break;
             case CNPropertyTypeBoolean:
                 value = [resultSet objectForColumnName:aQueryField];
                 if ([value isKindOfClass:[NSString class]]) {
                     value = @([value boolValue]);
+                }
+                
+                if (value==[NSNull null]) {
+                    value = @(0); // previous was nil
                 }
                 break;
             case CNPropertyTypeData:
