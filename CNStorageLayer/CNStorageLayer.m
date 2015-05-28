@@ -218,6 +218,66 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
     
 }
 
+- (NSArray *)fetchObjectsOfClass:(NSString *)className
+                  matchingValues:(NSDictionary *)params
+                 sortDescriptors:(NSArray *)sortDescriptors
+             paginationParamters:(NSDictionary *)pagination
+{
+    __block NSString *query = nil;
+    __block NSMutableArray *args = nil;
+    Class targetClass = NSClassFromString(className);
+    NSDictionary *map = [targetClass propertyDescriptionMapByPropertyName];
+    
+    // Cached Query functions are not thread safe, so we only access them
+    // from the DB queue.
+    [self.dbQueue inDatabase:^(FMDatabase *db) {
+        NSMutableArray *nonNullKeys = [NSMutableArray arrayWithCapacity:[params count]];
+        NSMutableArray *nullKeys = [NSMutableArray arrayWithCapacity:[params count]];
+        args = [NSMutableArray arrayWithCapacity:[params count]];
+        
+        [params enumerateKeysAndObjectsUsingBlock:^(NSString *aKey, id aValue, BOOL *stop) {
+            if (aValue==[NSNull null]) {
+                [nullKeys addObject:aKey];
+            } else {
+                [nonNullKeys addObject:aKey];
+                [args addObject:aValue];
+            }
+        }];
+        
+        query = [self keyedSelectForClass:className withKeys:nonNullKeys];
+        if ([nullKeys count] > 0) {
+            NSString *nullClauses = [nullKeys componentsJoinedByString:@" IS NULL AND "];
+            query = [NSString stringWithFormat:@"%@ AND %@ IS NULL", query, nullClauses];
+        }
+        
+        NSString *orderBy = [self orderByClauseFromSortDescriptors:sortDescriptors
+                                                  usingPropertyMap:map];
+        if ([orderBy length] > 0) {
+            query = [NSString stringWithFormat:@"%@ ORDER BY %@", query, orderBy];
+        }
+        
+        if (pagination && [[pagination allKeys] containsObject:@"limit"]) {
+            
+            if ([pagination[@"limit"] integerValue]>0)
+                query = [NSString stringWithFormat:@"%@ LIMIT %@", query, pagination[@"limit"]];
+
+        }
+        
+        if (pagination && [[pagination allKeys] containsObject:@"offset"]) {
+            
+            if ([pagination[@"offset"] integerValue]>0)
+                query = [NSString stringWithFormat:@"%@ OFFSET %@", query, pagination[@"offset"]];
+            
+        }
+        
+    }];
+    
+    return [self fetchObjectsOfClass:className
+                           fromQuery:query
+                                args:args];
+    
+}
+
 #pragma mark - Predicate-based Fetching
 
 - (NSArray *)fetchObjectsOfClass:(NSString *)className
