@@ -321,6 +321,118 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
                                 args:args];
 }
 
+- (NSArray *)fetchObjectsOfClass:(NSString *)className
+               matchingPredicate:(NSPredicate *)predicate
+                 sortDescriptors:(NSArray *)sortDescriptors
+            paginationParamters:(NSDictionary *)pagination
+{
+    __block NSString *query = nil;
+    Class targetClass = NSClassFromString(className);
+    NSString *tableName = [targetClass tableName];
+    NSDictionary *map = [targetClass propertyDescriptionMapByPropertyName];
+    NSString *serializedFields = [targetClass serializedOrderedQueryFieldsWithPrimaryKey];
+    
+    NSString *whereClause = nil;
+    NSArray *args = nil;
+    BOOL success = [predicate convertToClause:&whereClause
+                                    arguments:&args
+                                 usingMapping:map];
+    NSAssert(success, @"Failed to convert predicate to SQL clause.");
+    
+    // We always need at least one clause
+    whereClause = ([whereClause length] > 0 ? whereClause : @"1 = 1");
+    query = [NSString stringWithFormat:@"SELECT %@ FROM %@ WHERE %@", serializedFields, tableName, whereClause];
+    
+    // Add Order By clause if there is one
+    NSString *orderBy = [self orderByClauseFromSortDescriptors:sortDescriptors
+                                              usingPropertyMap:map];
+    if ([orderBy length] > 0) {
+        query = [NSString stringWithFormat:@"%@ ORDER BY %@", query, orderBy];
+    }
+    
+    if (pagination && [[pagination allKeys] containsObject:@"limit"]) {
+        
+        if ([pagination[@"limit"] integerValue]>0)
+            query = [NSString stringWithFormat:@"%@ LIMIT %@", query, pagination[@"limit"]];
+        
+    }
+    
+    if (pagination && [[pagination allKeys] containsObject:@"offset"]) {
+        
+        if ([pagination[@"offset"] integerValue]>0)
+            query = [NSString stringWithFormat:@"%@ OFFSET %@", query, pagination[@"offset"]];
+        
+    }
+    
+    return [self fetchObjectsOfClass:className
+                           fromQuery:query
+                                args:args];
+}
+
+- (NSUInteger)countbjectsOfClass:(NSString *)className
+               matchingPredicate:(NSPredicate *)predicate
+                 sortDescriptors:(NSArray *)sortDescriptors
+             paginationParamters:(NSDictionary *)pagination
+{
+    __block NSString *query = nil;
+    Class targetClass = NSClassFromString(className);
+    NSString *tableName = [targetClass tableName];
+    NSDictionary *map = [targetClass propertyDescriptionMapByPropertyName];
+    
+    NSString *whereClause = nil;
+    NSArray *args = nil;
+    BOOL success = [predicate convertToClause:&whereClause
+                                    arguments:&args
+                                 usingMapping:map];
+    NSAssert(success, @"Failed to convert predicate to SQL clause.");
+    
+    // We always need at least one clause
+    whereClause = ([whereClause length] > 0 ? whereClause : @"1 = 1");
+    query = [NSString stringWithFormat:@"SELECT COUNT(1) AS numOfResult FROM %@ WHERE %@", tableName, whereClause];
+    
+    // Add Order By clause if there is one
+    NSString *orderBy = [self orderByClauseFromSortDescriptors:sortDescriptors
+                                              usingPropertyMap:map];
+    if ([orderBy length] > 0) {
+        query = [NSString stringWithFormat:@"%@ ORDER BY %@", query, orderBy];
+    }
+    
+    if (pagination && [[pagination allKeys] containsObject:@"limit"]) {
+        
+        if ([pagination[@"limit"] integerValue]>0)
+            query = [NSString stringWithFormat:@"%@ LIMIT %@", query, pagination[@"limit"]];
+        
+    }
+    
+    if (pagination && [[pagination allKeys] containsObject:@"offset"]) {
+        
+        if ([pagination[@"offset"] integerValue]>0)
+            query = [NSString stringWithFormat:@"%@ OFFSET %@", query, pagination[@"offset"]];
+    }
+    
+    __block NSUInteger counter = 0;
+    
+    [self.dbQueue inDatabase:^(FMDatabase *db) {
+        
+        FMResultSet *rs = [db executeQuery:query
+                      withArgumentsInArray:args];
+        if (!rs) {
+            NSString *errMsg = [db lastErrorMessage];
+            NSLog(@"Error executing Query (%@). Error: %@", query, errMsg);
+            return;
+        }
+        
+        while ([rs next])
+        {
+            counter = [rs intForColumn:@"numOfResult"];
+            break;
+        }
+        [rs close];
+    }];
+    
+    return counter;
+}
+
 #pragma mark - Identifier-based Fetching Method
 
 -(void)reloadObject:(id)object

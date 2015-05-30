@@ -47,6 +47,16 @@ extern NSString * const CNStorageLayerSavedObjectsKey;
                   matchingValues:(NSDictionary *)params
                  sortDescriptors:(NSArray *)sortDescriptors
              paginationParamters:(NSDictionary *)pagination;
+- (NSArray *)fetchObjectsOfClass:(NSString *)className
+               matchingPredicate:(NSPredicate *)predicate
+                 sortDescriptors:(NSArray *)sortDescriptors
+             paginationParamters:(NSDictionary *)pagination;
+
+// Simplified Counting methods
+- (NSUInteger)countbjectsOfClass:(NSString *)className
+               matchingPredicate:(NSPredicate *)predicate
+                 sortDescriptors:(NSArray *)sortDescriptors
+             paginationParamters:(NSDictionary *)pagination;
 
 
 // Base Fetching Method
