@@ -388,7 +388,7 @@ NSString * const CNStorageLayerSavedObjectsKey = @"SavedObjects";
     
     // We always need at least one clause
     whereClause = ([whereClause length] > 0 ? whereClause : @"1 = 1");
-    query = [NSString stringWithFormat:@"SELECT COUNT(1) AS numOfResult FROM %@ WHERE %@", tableName, whereClause];
+    query = [NSString stringWithFormat:@"SELECT COUNT(*) AS numOfResult FROM %@ WHERE %@", tableName, whereClause];
     
     // Add Order By clause if there is one
     NSString *orderBy = [self orderByClauseFromSortDescriptors:sortDescriptors

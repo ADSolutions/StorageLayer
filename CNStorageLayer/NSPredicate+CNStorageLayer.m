@@ -39,7 +39,8 @@
                       @(NSNotEqualToPredicateOperatorType) : @"<>",
                       @(NSBeginsWithPredicateOperatorType) : @"LIKE '%' ||",
                       @(NSEndsWithPredicateOperatorType) : @"LIKE",
-                      @(NSContainsPredicateOperatorType) : @"LIKE '%' ||"
+                      @(NSContainsPredicateOperatorType) : @"LIKE '%' ||",
+                      @(NSInPredicateOperatorType)  : @"IN"
                       };
         suffixs = @{
                     @(NSLessThanPredicateOperatorType) : @"",
@@ -50,7 +51,8 @@
                     @(NSNotEqualToPredicateOperatorType) : @"",
                     @(NSBeginsWithPredicateOperatorType) : @"",
                     @(NSEndsWithPredicateOperatorType) : @" || '%'",
-                    @(NSContainsPredicateOperatorType) : @" || '%'"
+                    @(NSContainsPredicateOperatorType) : @" || '%'",
+                    @(NSInPredicateOperatorType)    : @""
                     };
         
     });
@@ -104,9 +106,15 @@
             *args = lhsArgs;
             *string = [NSString stringWithFormat:@"%@ IS NOT NULL", lhsClause];
             return YES;
-        }
+        } 
         NSLog(@"RHS cannot be nil for inequalities.");
         return NO;
+    }
+    
+    if (self.predicateOperatorType==NSInPredicateOperatorType) {
+        *args = rhsArgs;
+        *string = [NSString stringWithFormat:@"%@ IN %@", lhsClause, [rhsArgs componentsJoinedByString:@","]];
+        return YES;
     }
     
     [resultArgs addObjectsFromArray:lhsArgs];
