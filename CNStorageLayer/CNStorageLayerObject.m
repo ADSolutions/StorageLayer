@@ -21,26 +21,32 @@
 
 id fetchedPropertyAutoloader(CNStorageLayerObject *self, SEL _cmd)
 {
-    NSAssert(self.storageLayer!=nil, @"Can't fetch from objects that aren't saved.");
-    NSString *propertyName = NSStringFromSelector(_cmd);
-    id result = [self.fetchedObjectStorage objectForKey:propertyName];
-    if (!result) {
-        CNFetchedPropertyDescription *desc = (CNFetchedPropertyDescription *)[[self class] propertyDescriptionForProperty:propertyName];
-        NSAssert([desc isKindOfClass:[CNFetchedPropertyDescription class]], @"Property Description for property %@ is not a fetched property.", propertyName);
-        NSPredicate *origPred = desc.fetchPredicate;
-        NSPredicate *subPred = [origPred predicateWithSubstitutionVariables:[self substitutionVariables]];
-        NSArray *matches = [self.storageLayer fetchObjectsOfClass:desc.targetClassName
-                                                matchingPredicate:subPred];
-        if (desc.propertyType==CNPropertyTypeObject) {
-            result = [matches firstObject];
-        } else {
-            result = matches;
-        }
-        
-        if (result) {
-            [self.fetchedObjectStorage setObject:result forKey:propertyName];
+    id result = nil;
+    
+    if (self.storageLayer)
+    {
+        NSAssert(self.storageLayer!=nil, @"Can't fetch from objects that aren't saved.");
+        NSString *propertyName = NSStringFromSelector(_cmd);
+        result = [self.fetchedObjectStorage objectForKey:propertyName];
+        if (!result) {
+            CNFetchedPropertyDescription *desc = (CNFetchedPropertyDescription *)[[self class] propertyDescriptionForProperty:propertyName];
+            NSAssert([desc isKindOfClass:[CNFetchedPropertyDescription class]], @"Property Description for property %@ is not a fetched property.", propertyName);
+            NSPredicate *origPred = desc.fetchPredicate;
+            NSPredicate *subPred = [origPred predicateWithSubstitutionVariables:[self substitutionVariables]];
+            NSArray *matches = [self.storageLayer fetchObjectsOfClass:desc.targetClassName
+                                                    matchingPredicate:subPred];
+            if (desc.propertyType==CNPropertyTypeObject) {
+                result = [matches firstObject];
+            } else {
+                result = matches;
+            }
+            
+            if (result) {
+                [self.fetchedObjectStorage setObject:result forKey:propertyName];
+            }
         }
     }
+    
     return result;
 }
 
@@ -253,7 +259,7 @@ id fetchedPropertyAutoloader(CNStorageLayerObject *self, SEL _cmd)
         // Add the Primary Key
         CNPropertyDescription *pd = [self primaryKeyDescription];
         [result setObject:pd forKey:pd.queryFieldName];
-
+        
         [cache setObject:result forKey:NSStringFromClass(self)];
     }
     return result;
